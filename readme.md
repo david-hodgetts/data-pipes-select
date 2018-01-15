@@ -1,19 +1,17 @@
-# data-pipes select
+# Data-pipes, select functionality
+This exploratory repository presents a first approach to the implementation of the *select* functionality. This functionality extends the dataNugget protocol as defined in the [data-pipes](https://github.com/olange/data-pipes) project.
 
-This exploratory repo implements a version of the *select* function with the [immutable-cursor](https://github.com/redbadger/immutable-cursor) library.
+The *select* function creates a reference to a path in a dataNugget. This allows one to pass smaller sections (from a larger nested collection) to portions of an application, while maintaining a central point aware of changes. Our implementation relies on the [immutable-cursor](https://github.com/redbadger/immutable-cursor) library.
 
+## Usage
 
-## Select
+Given a **dataNugget**, a **path** and a **callback**, the *select* function returns a **dataNugget/dataEgg** representing the data at the given path.  
+We expect this newly created subset of the data to be able to notify mutations. To accomplish this, the *data* property is wrapped in an [immutable cursor](https://github.com/redbadger/immutable-cursor). The *callback* argument is passed to the cursor and signals its mutations.
 
-given a **dataNugget**, a **path** and a **callback**, return a **dataNugget/dataEgg** such as its data property is wrapped in an immutable cursor, and its schema points to the selected path.
-The callback signals mutations of the cursor.
 
 ```javascript
-
-// 1 build a DataNugget (immutable value + schema)
-
-// define GQL typedef
-// "Data" defines entry point 
+// define a GQL formatted typedefs string
+// with the exception that we use the "Data" type to define the entry point 
 const typeDefs = `
   type Data {
     data: [Person]
@@ -22,11 +20,11 @@ const typeDefs = `
     name: String
     age: Int
     scores: [Int!]!
-    friend:Person
+    friend: Person
   } 
 `
 
-//  a plain js value conforming to previously defined typeDefs…
+// a plain js value conforming to previously defined typeDefs…
 const valueJs = [
   {name:"Sonic", 
     age: 30,
@@ -52,6 +50,7 @@ const cb = (nextValue, prevValue, keyPath) => {
 
 const dataEgg = select(dataNugget, ['0','scores'], cb);
 
+// modifications to the dataEgg are signalled by the execution of the callback
 dataEgg.setIn(['data', '0'], 42);
   
 ```

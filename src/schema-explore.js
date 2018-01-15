@@ -30,25 +30,27 @@ export const Type = {
 
 const compose = (...functions) => data => functions.reduceRight((value, func) => func(value), data);
 
-// (typeDefs:string) => typeDefsGql:string
-// replaces "type Data" by "type Query"
-function adaptTypeDefsForGql(typeDefs){
+// prepare a "data-pipes" formatted typeDefs for gql schema parsing.
+// gql schemas expect a "Query" or "Mutation" entry point:
+// we simply rename entry point "Data" to "Query".
+function adaptTypeDefsToGqlFormat(typeDefs){
   return  typeDefs.split(/\r?\n/)
           .map(line => line.replace(/(\s*type\s)Data/, "$1Query"))
           .join('\n');
 }
 
-// (typedefs:string) => schema
+// (typerDefs:string) => schema
 // given a typedefs formatted string return a schema.
-// the transformation is done in two steps
-// 1.
-// Typedefs are parsed with the graphql tools.
+// the transformation is done in three steps:
+// 1. 
+// rename entry point to a valid gql entry point ('Data' -> 'Query').
 // 2.
-// the resulting schema is then simplified. We only keep the typeMap property,
-// and translate it to an immutable representation
+// parse typeDefs with the graphql tools.
+// 3.
+// simplify the schema and translate it to an immutable representation. 
 export const schemaFromTypeDefs = compose(convertGqlSchemaToImmutable, 
                                           graphqlTools.buildSchemaFromTypeDefinitions, 
-                                          adaptTypeDefsForGql);
+                                          adaptTypeDefsToGqlFormat);
 
 // maps graphqlTypeName:string to functions with signature:
 // graphqlType => immutableType:Record
@@ -96,10 +98,10 @@ function convertGqlTypeToImmutable(type){
 
 // given a gqlSchema return an immutable representation of its typeMap
 function convertGqlSchemaToImmutable(gqlSchema){
-  // console.log(gqlSchema._typeMap.Query);
+
+  // 1 extract typemap property from gqlSchema and store it into an immutable map
   let result = Immutable.Map(gqlSchema._typeMap);
-  // console.log(gqlSchema);
-  // console.log(result);
+  // 2 remove unwanted extra properties
   result = result.delete("__Directive")
   .delete("__DirectiveLocation")
   .delete("__EnumValue")
@@ -108,12 +110,14 @@ function convertGqlSchemaToImmutable(gqlSchema){
   .delete("__Schema")
   .delete("__Type")
   .delete("__TypeKind")
+  // 3 rename entry point "Query" to "Data"
   .set("Data", gqlSchema._typeMap.Query)
   .delete("Query");
 
   result.get("Data").name = "Data";
   result.get("Data")._typeConfig.name = "Data";
 
+  // 4 convert js objects to immutable records
   result = result.map(convertGqlTypeToImmutable);
 
   return result;  
@@ -155,11 +159,14 @@ function schemaSelect(schema, path){
   return result;
 }
 
-// given a dataNugget, a path and a callback
-// return a dataNugget where the data property is a cursor representing the data at path,
-// and where the schema represents the data at the cursor.
-// The callback signals mutations of the cursor.
+// Given a dataNugget, a path and a callback
+// return a dataNugget/dataEgg representing the data at the given path.
+// The data property is wrapped in an immutable cursor.
+// The callback argument is passed to the cursor and signals its mutations.
+// argument types: 
+// path: [string]
+// cb: (nextValue, prevValue, keyPath) => void
 export function select(dataNugget, path, cb){
-  return Immutable.Map({data:Cursor.from(dataNugget.get('data'), path, cb),
+  return Immutable.Map({data: Cursor.from(dataNugget.get('data'), path, cb),
                         schema: schemaSelect(dataNugget.get('schema'), path)});
 }
