@@ -69,3 +69,5 @@ Run development server.
 ```
   $ npm run start
 ```
+
+In its current state you can only interact with the project via the development project.

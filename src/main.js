@@ -46,6 +46,6 @@ window.dataEgg = select(dataNugget, ['0'], cb);
 // modifications to the dataEgg are signalled by the execution of the callback
 dataEgg.setIn(['data', 'age'], 42);
 
-window.dataEgg2 = select(dataEgg, ['friend']);
+window.otherDataEgg = select(dataEgg, ['friend']);
 // modifications to descendents of dataEgg are also signalled by the execution of the callback
-dataEgg2.setIn(['data', 'name'], "Wario");
+otherDataEgg.setIn(['data', 'name'], "Wario");
