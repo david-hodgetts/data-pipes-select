@@ -159,8 +159,8 @@ function schemaSelect(schema, path){
   return result;
 }
 
-// Given a dataNugget, a path and a callback
-// return a dataNugget/dataEgg representing the data at the given path.
+// Given a DataNugget, a path and a callback
+// return a DataNugget/DataEgg representing the data at the given path.
 // The data property is wrapped in an immutable cursor.
 // The callback argument is passed to the cursor and signals its mutations.
 // argument types: 
